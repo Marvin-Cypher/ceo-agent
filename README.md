@@ -1,51 +1,47 @@
-# Content Summarizer Agent
+# CEO Agent
 
-Intelligent summarizer supporting 8 input types: audio, video, online videos, PDF, images, web pages, and text documents. Generates structured Markdown reports and mind map PNGs.
+Executive AI assistant combining content intelligence with business conversation tracking. Designed for founders, executives, and business leaders who need to stay on top of everything.
 
-**Supports**: YouTube, TikTok, Instagram Reels, X/Twitter, Bilibili, and any yt-dlp compatible URL.
+## Capabilities
+
+### Content Summarization
+Summarize any content type with structured reports and mind maps:
+- **Audio/Video**: mp3, wav, m4a, mp4, mov, mkv (transcription → summary)
+- **Online Video**: YouTube, TikTok, Instagram Reels, X/Twitter, and any yt-dlp URL
+- **Documents**: PDF, images (OCR/vision), web pages, text files
+- **Auto-detection**: Meeting, Interview, Lecture, Podcast, or General — tailored output
+
+### Business Conversation Tracking (fbtrack)
+- Sync Telegram and Slack conversations
+- Fetch Fireflies meeting transcripts
+- AI-powered insight extraction (deals, action items, Q&A)
+- Weekly merged reports across all channels
+- CRM sync (Attio) for interaction dates and meeting notes
+- Push reports to Notion
+
+### Composio Integrations
+Connected apps available to all Clawdi users:
+- Gmail, Google Calendar, Google Drive
+- Notion, Slack
+- Any other connected Composio apps
 
 ## Quick Start
 
-1. Install the agent via Clawdi's 1-click install
-2. Optionally configure a transcription API key (or use OpenClaw platform credentials)
-3. Send any content — audio file, video URL, PDF, image, web link, or text — and get a structured summary
-
-## How It Works
-
-```
-Input → Detect Type → Transcribe/Read → Scenario Recognition → Analysis Report
-    → Agent: Structured Summary → Mind Map PNG → Final Output
-```
-
-### Supported Inputs
-
-| Type | Examples |
-|------|----------|
-| Audio | mp3, wav, m4a, flac, ogg |
-| Video | mp4, mov, mkv, webm |
-| Online Video | YouTube, TikTok, Instagram, X URLs |
-| PDF | .pdf files |
-| Images | jpg, png, webp |
-| Web Pages | Any URL |
-| Text | txt, md, docx |
-
-### Scenario Detection
-
-Automatically classifies content as: Meeting, Interview, Lecture, Podcast, or General — then tailors the summary structure accordingly.
+1. Install via Clawdi's 1-click install
+2. Chat with the agent — it will introduce itself and learn about you
+3. Send content to summarize, or ask it to run a weekly business sync
 
 ## Requirements
 
-- Python 3
-- OpenClaw platform login (for built-in transcription API)
-- `ffmpeg` (optional — for video format conversion)
-- `yt-dlp` (optional — for online video/audio downloads)
+- Python 3 (for summarization)
+- Node.js + npm (for fbtrack)
+- OpenClaw platform login
+- Optional: ffmpeg, yt-dlp, Fireflies API key, Telegram API credentials
 
-## Output
+## Output Examples
 
 | File | Description |
 |------|-------------|
-| `*-transcript.txt` | Raw transcription |
-| `*-summary.md` | Analysis report with scenario guidance |
-| `*-summary-final.md` | Agent-generated final summary |
-| `*-mindmap.md` | Mind map source (Markdown outline) |
+| `*-summary-final.md` | Structured summary report |
 | `*-mindmap.png` | Mind map visualization |
+| `weekly-report-*.md` | Merged weekly business report |

@@ -1,10 +1,10 @@
 {
-  "id": "content-summarizer",
-  "name": "Content Summarizer",
-  "description": "Intelligent summarizer supporting 8 input types: audio, video, online videos (YouTube, TikTok, Instagram, etc.), PDF, images, web pages, and text documents. Auto-transcribes, detects content scenarios, generates structured Markdown reports and mind map PNGs.",
+  "id": "ceo-agent",
+  "name": "CEO Agent",
+  "description": "Executive assistant with content intelligence and business conversation tracking. Summarizes any content (audio, video, PDF, web, text), tracks conversations across Telegram, Slack, and Fireflies meetings, generates weekly reports with CRM sync, and integrates with Gmail, Calendar, Drive, Notion, and Slack via Composio.",
   "model": "{YOUR_MODEL_ID}",
   "os": [],
-  "skills": ["summarize-pro", "markmap-mindmap-export"],
+  "skills": ["summarize-pro", "markmap-mindmap-export", "fbtrack-sync"],
   "tools": { "allow": ["group:subagent"] },
   "formData": {
     "fields": [
@@ -14,7 +14,7 @@
         "type": "password",
         "required": false,
         "placeholder": "sk-...",
-        "description": "OpenAI-compatible API key for audio/video transcription (supports OpenAI Whisper, Deepgram, etc.). Only needed for audio/video content; PDF, images, web pages, and text don't require this."
+        "description": "OpenAI-compatible API key for audio/video transcription. Only needed for audio/video content."
       },
       {
         "key": "transcribe_base_url",
@@ -22,7 +22,31 @@
         "type": "text",
         "required": false,
         "placeholder": "https://api.openai.com/v1",
-        "description": "Transcription API endpoint. Leave blank to use OpenAI. Fill in the address for other compatible services."
+        "description": "Transcription API endpoint. Leave blank to use OpenAI."
+      },
+      {
+        "key": "fireflies_api_key",
+        "label": "Fireflies API Key (optional)",
+        "type": "password",
+        "required": false,
+        "placeholder": "ff-...",
+        "description": "Fireflies.ai API key for meeting transcript integration."
+      },
+      {
+        "key": "telegram_api_id",
+        "label": "Telegram API ID (optional)",
+        "type": "text",
+        "required": false,
+        "placeholder": "12345678",
+        "description": "Telegram API ID for conversation tracking. Get from https://my.telegram.org."
+      },
+      {
+        "key": "telegram_api_hash",
+        "label": "Telegram API Hash (optional)",
+        "type": "password",
+        "required": false,
+        "placeholder": "",
+        "description": "Telegram API Hash (paired with API ID above)."
       }
     ],
     "target": ".secrets/transcribe-config.json"

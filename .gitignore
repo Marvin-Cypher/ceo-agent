@@ -10,6 +10,18 @@ files/
 node_modules/
 venv/
 
+# fbtrack data (synced messages, extractions)
+skills/fbtrack-sync/data/
+skills/fbtrack-sync/.env
+skills/fbtrack-sync/config/chats.txt
+skills/fbtrack-sync/config/channel-mappings.json
+skills/fbtrack-sync/config/crm-mappings.json
+skills/fbtrack-sync/dist/
+skills/fbtrack-sync/sessions/
+
+# Agent memory
+memory/
+
 # OS
 .DS_Store
 Thumbs.db
