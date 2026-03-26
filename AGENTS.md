@@ -99,34 +99,33 @@ When asked to run a weekly sync, business report, or conversation tracking:
 ```bash
 cd skills/fbtrack-sync && set -a && . .env && set +a
 
-# Conversation sync
-npx fbtrack sync                                    # Telegram
-npx fbtrack slack-sync --days 10                    # Slack
-npx fbtrack extract --all --agent sales-extractor   # AI extraction
+# Step 1: Pull ALL data (auto-detects connected apps)
+node scripts/composio-unified-sync.js --days 10     # Gmail/Zoom/Meet/Teams/HubSpot/Linear/etc.
+npx fbtrack sync                                    # Telegram (direct)
+npx fbtrack slack-sync --days 10                    # Slack (direct, richer data)
 
-# Meeting transcripts (choose one or more)
-node scripts/fetch_fireflies.cjs 10                 # Fireflies (direct API)
-node scripts/composio-meeting-sync.js --days 10     # Zoom/Meet/Teams/Fathom (Composio)
+# Step 2: AI extraction
+npx fbtrack extract --all --agent sales-extractor
 
-# Report
-node scripts/merge_report.cjs --date-range "..."    # Merged report
+# Step 3: Generate report (reads ALL data/)
+node scripts/merge_report.cjs --date-range "..."
 
-# CRM sync (auto-detects connected CRM)
-node scripts/composio-crm-sync.js                   # HubSpot/Salesforce/Pipedrive/Attio/Zoho
-node scripts/sync_attio_interactions.cjs            # OR: Attio direct API
-
-# Action items → project management
-node scripts/composio-action-items-sync.js --provider linear  # Linear/Jira/Asana/etc.
+# Step 4: Write back
+node scripts/composio-crm-sync.js                   # → CRM (auto-detect)
+node scripts/composio-action-items-sync.js           # → Project mgmt
 ```
 
-### Supported Integrations
+### Auto-detected Sources (via Composio)
 
-| Category | Tools (via Composio) |
-|----------|---------------------|
-| **Meeting transcripts** | Zoom, Google Meet, Microsoft Teams, Fathom, Fireflies |
+| Category | Tools |
+|----------|-------|
+| **Email** | Gmail |
+| **Meetings** | Zoom, Google Meet, Microsoft Teams, Fathom, Fireflies |
+| **Chat** | Slack (Composio + direct), Telegram (direct only) |
 | **CRM** | HubSpot, Salesforce, Pipedrive, Attio, Zoho CRM |
-| **Project management** | Linear, Jira, Asana, Monday.com, ClickUp, Trello, Notion |
-| **Messaging** | Telegram (direct), Slack (direct + Composio) |
+| **Tasks** | Linear, Jira, Asana, Monday.com, ClickUp |
+
+All data flows into `data/` → `merge_report.cjs` → one unified weekly report.
 
 ---
 

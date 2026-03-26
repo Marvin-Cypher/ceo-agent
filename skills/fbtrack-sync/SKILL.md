@@ -84,46 +84,53 @@ Edit each file with your actual chat IDs, channel names, partner-to-CRM mappings
 Run these steps in order to generate a complete weekly report:
 
 ```bash
-# Set working directory
 cd skills/fbtrack-sync
-
-# Load environment
 set -a && . .env && set +a
 
-# 1. Sync Telegram messages
+# ── Step 1: Pull data from ALL connected sources ──
+
+# Composio unified sync — auto-detects Gmail, Zoom, Meet, Teams,
+# Fathom, Fireflies, Slack, HubSpot, Salesforce, Pipedrive, Linear,
+# Jira, Asana, ClickUp — pulls everything into data/
+node scripts/composio-unified-sync.js --days 10
+
+# Telegram direct sync (Composio doesn't support Telegram)
 npx fbtrack sync
 
-# 2. Sync Slack channels (last 10 days)
+# Slack direct sync (richer than Composio — both can coexist)
 npx fbtrack slack-sync --days 10
 
-# 3. Extract partnership insights via AI
-npx fbtrack extract --all --agent sales-extractor
-
-# 4. Fetch Fireflies meetings (last 10 days)
+# Fireflies direct API (optional — richer data than Composio)
 node scripts/fetch_fireflies.cjs 10
 
-# 5. Generate merged report
+# ── Step 2: AI extraction on conversation data ──
+npx fbtrack extract --all --agent sales-extractor
+
+# ── Step 3: Generate merged report (reads ALL data/) ──
 node scripts/merge_report.cjs --date-range "Mar 18 - Mar 25, 2026"
 cp /tmp/merged_report.md reports/weekly-report-$(date +%Y-%m-%d).md
 
-# 6. OR: Fetch meetings from Zoom/Meet/Teams/Fathom via Composio
-node scripts/composio-meeting-sync.js --days 10
-
-# 7. Generate merged report
-node scripts/merge_report.cjs --date-range "Mar 18 - Mar 25, 2026"
-cp /tmp/merged_report.md reports/weekly-report-$(date +%Y-%m-%d).md
-
-# 8. Sync to CRM (auto-detects: HubSpot, Salesforce, Pipedrive, Attio, Zoho)
+# ── Step 4: Write back to CRM and project tools ──
 node scripts/composio-crm-sync.js
-# OR use direct Attio API:
-# node scripts/sync_attio_interactions.cjs
-
-# 9. Sync action items to project management (Linear, Jira, Asana, etc.)
 node scripts/composio-action-items-sync.js --provider linear
 
-# 10. Push report to Notion (via Composio)
+# ── Step 5: Push report to Notion ──
 # See "Push to Notion" section below
 ```
+
+### How the unified sync works
+
+`composio-unified-sync.js` auto-detects ALL connected Composio apps and pulls normalized data into `data/`:
+
+| Connected App | Data Saved To | Type |
+|--------------|---------------|------|
+| Gmail | `data/gmail/` | Business emails |
+| Zoom, Google Meet, Teams, Fathom, Fireflies | `data/meetings/` | Meeting transcripts & notes |
+| Slack | `data/slack/` | Channel messages |
+| HubSpot, Salesforce, Pipedrive, Attio, Zoho | `data/crm/` | CRM activities |
+| Linear, Jira, Asana, ClickUp | `data/tasks/` | Task updates |
+
+`merge_report.cjs` reads ALL of these directories plus fbtrack extractions and generates one unified report. Users only need to connect their tools in the Clawdi dashboard — no config needed.
 
 ---
 

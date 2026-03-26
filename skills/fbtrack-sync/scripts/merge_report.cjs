@@ -1,10 +1,16 @@
-// Merge Telegram, Slack, and Fireflies data into a weekly report
+// Merge ALL data sources into a weekly business report
 // Usage: node scripts/merge_report.cjs --date-range "Mar 18 - Mar 25, 2026"
 //
-// Reads:
+// Reads from:
+//   - data/all-sources.json (unified Composio sync output)
 //   - data/extractions/ (fbtrack extract output)
-//   - /tmp/fireflies_recent.json (from fetch_fireflies.cjs)
-//   - config/channel-mappings.json (partner groupings)
+//   - data/meetings/ (Composio meeting sync)
+//   - data/gmail/ (Composio Gmail sync)
+//   - data/slack/ (Composio Slack sync)
+//   - data/crm/ (Composio CRM sync)
+//   - data/tasks/ (Composio task sync)
+//   - /tmp/fireflies_recent.json (direct Fireflies API)
+//   - config/channel-mappings.json
 //
 // Output: /tmp/merged_report.md
 
@@ -20,123 +26,244 @@ for (let i = 2; i < process.argv.length; i++) {
   }
 }
 
-// Load channel mappings config
+const DATA_ROOT = path.join(__dirname, '..', 'data');
+
+// Load config
 const CONFIG_PATH = path.join(__dirname, '..', 'config', 'channel-mappings.json');
-let channelConfig = { slack_channels: {}, telegram_chats: {}, fireflies_meeting_mappings: {} };
-try {
-  channelConfig = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8'));
-} catch (e) {
-  console.warn('No channel-mappings.json found. Using raw channel/meeting names.');
-}
+let channelConfig = {};
+try { channelConfig = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8')); } catch (e) {}
 
-// Load CRM mappings for partner grouping
 const CRM_CONFIG_PATH = path.join(__dirname, '..', 'config', 'crm-mappings.json');
-let crmConfig = { fireflies_to_company: {} };
-try {
-  crmConfig = JSON.parse(fs.readFileSync(CRM_CONFIG_PATH, 'utf8'));
-} catch (e) {
-  // OK - CRM config is optional
-}
+let crmConfig = {};
+try { crmConfig = JSON.parse(fs.readFileSync(CRM_CONFIG_PATH, 'utf8')); } catch (e) {}
 
-// Load extraction data
-const DATA_DIR = path.join(__dirname, '..', 'data', 'extractions');
-let extractions = [];
-try {
-  if (fs.existsSync(DATA_DIR)) {
-    const files = fs.readdirSync(DATA_DIR).filter(f => f.endsWith('.json'));
-    for (const file of files) {
+// ─── Load ALL data sources ───
+
+function loadJsonDir(dirPath) {
+  const items = [];
+  try {
+    if (!fs.existsSync(dirPath)) return items;
+    for (const f of fs.readdirSync(dirPath).filter(f => f.endsWith('.json'))) {
       try {
-        const data = JSON.parse(fs.readFileSync(path.join(DATA_DIR, file), 'utf8'));
-        if (Array.isArray(data)) {
-          extractions.push(...data);
-        } else {
-          extractions.push(data);
-        }
-      } catch (e) {
-        console.warn(`Skipping malformed extraction file: ${file}`);
-      }
+        const data = JSON.parse(fs.readFileSync(path.join(dirPath, f), 'utf8'));
+        if (Array.isArray(data)) items.push(...data);
+        else items.push(data);
+      } catch (e) { /* skip */ }
     }
-  }
-} catch (e) {
-  console.warn('No extraction data found.');
+  } catch (e) { /* skip */ }
+  return items;
 }
 
-// Load Fireflies data
-let meetings = [];
+// Unified items (from composio-unified-sync.js)
+let allItems = [];
+try {
+  const allPath = path.join(DATA_ROOT, 'all-sources.json');
+  if (fs.existsSync(allPath)) {
+    allItems = JSON.parse(fs.readFileSync(allPath, 'utf8'));
+  }
+} catch (e) {}
+
+// Also load individual directories (in case unified sync wasn't run)
+const meetings = [
+  ...loadJsonDir(path.join(DATA_ROOT, 'meetings')),
+  ...allItems.filter(i => i.sourceType === 'meeting')
+];
+const emails = [
+  ...loadJsonDir(path.join(DATA_ROOT, 'gmail')),
+  ...allItems.filter(i => i.sourceType === 'email')
+];
+const chatMessages = [
+  ...loadJsonDir(path.join(DATA_ROOT, 'slack')),
+  ...allItems.filter(i => i.sourceType === 'chat')
+];
+const crmActivities = [
+  ...loadJsonDir(path.join(DATA_ROOT, 'crm')),
+  ...allItems.filter(i => i.sourceType === 'crm-activity')
+];
+const tasks = [
+  ...loadJsonDir(path.join(DATA_ROOT, 'tasks')),
+  ...allItems.filter(i => i.sourceType === 'task')
+];
+const extractions = loadJsonDir(path.join(DATA_ROOT, 'extractions'));
+
+// Load Fireflies direct API data (backward compatible)
 try {
   const ffPath = '/tmp/fireflies_recent.json';
   if (fs.existsSync(ffPath)) {
-    meetings = JSON.parse(fs.readFileSync(ffPath, 'utf8'));
-  }
-} catch (e) {
-  console.warn('No Fireflies data found.');
-}
-
-// Group meetings by partner using config mappings
-function getMeetingPartner(meeting) {
-  const title = meeting.title || '';
-  // Check fireflies_meeting_mappings
-  for (const [pattern, partner] of Object.entries(channelConfig.fireflies_meeting_mappings || {})) {
-    if (title.toLowerCase().includes(pattern.toLowerCase())) {
-      return partner;
+    const ffData = JSON.parse(fs.readFileSync(ffPath, 'utf8'));
+    for (const m of ffData) {
+      if (!meetings.find(x => x.title === m.title && x.dateStr === m.dateStr)) {
+        meetings.push({
+          id: m.id, source: 'fireflies', sourceType: 'meeting',
+          date: m.date, dateStr: m.dateStr, title: m.title,
+          body: m.overview || '', participants: m.participants || [],
+          actionItems: m.action_items ? m.action_items.split('\n').filter(Boolean) : [],
+          metadata: { duration: m.duration, isPartnership: m.isPartnership, isInternal: m.isInternal }
+        });
+      }
     }
   }
-  // Check fireflies_to_company from CRM config
-  for (const [pattern, company] of Object.entries(crmConfig.fireflies_to_company || {})) {
-    if (title.toLowerCase().includes(pattern.toLowerCase())) {
-      return company;
-    }
-  }
-  return null;
+} catch (e) {}
+
+// Dedup by id
+function dedup(items) {
+  const seen = new Set();
+  return items.filter(i => {
+    const key = i.id || `${i.source}|${i.title}|${i.dateStr}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
-// Build report
+const allMeetings = dedup(meetings);
+const allEmails = dedup(emails);
+const allChats = dedup(chatMessages);
+const allCrm = dedup(crmActivities);
+const allTasks = dedup(tasks);
+
+// ─── Build report ───
+
 const lines = [];
 lines.push(`# Weekly Business Report`);
 lines.push(`**Period**: ${dateRange}`);
 lines.push(`**Generated**: ${new Date().toISOString().split('T')[0]}`);
 lines.push('');
 
-// Section 1: Meeting Summary
-const partnerMeetings = meetings.filter(m => m.isPartnership);
-const internalMeetings = meetings.filter(m => m.isInternal);
+// Data sources summary
+const sourceCounts = {};
+for (const items of [allMeetings, allEmails, allChats, allCrm, allTasks, extractions]) {
+  for (const i of items) {
+    const src = i.source || 'unknown';
+    sourceCounts[src] = (sourceCounts[src] || 0) + 1;
+  }
+}
+if (Object.keys(sourceCounts).length > 0) {
+  lines.push(`**Data sources**: ${Object.entries(sourceCounts).map(([s, c]) => `${s} (${c})`).join(', ')}`);
+  lines.push('');
+}
 
-lines.push(`## Meetings Overview`);
-lines.push(`- **Total meetings**: ${meetings.length}`);
-lines.push(`- **Partnership meetings**: ${partnerMeetings.length}`);
-lines.push(`- **Internal meetings**: ${internalMeetings.length}`);
-lines.push('');
-
-if (partnerMeetings.length > 0) {
-  lines.push(`### Partnership Meetings`);
+// ═══ Section 1: Meetings ═══
+if (allMeetings.length > 0) {
+  lines.push(`## Meetings (${allMeetings.length})`);
   lines.push('');
 
-  // Group by partner
-  const grouped = {};
-  for (const m of partnerMeetings) {
-    const partner = getMeetingPartner(m) || 'Other';
-    if (!grouped[partner]) grouped[partner] = [];
-    grouped[partner].push(m);
+  // Group by source
+  const bySource = {};
+  for (const m of allMeetings) {
+    const src = m.source || 'unknown';
+    if (!bySource[src]) bySource[src] = [];
+    bySource[src].push(m);
   }
 
-  for (const [partner, mList] of Object.entries(grouped)) {
-    lines.push(`#### ${partner}`);
-    for (const m of mList) {
-      lines.push(`- **${m.title}** (${m.dateStr})`);
-      if (m.overview) lines.push(`  - ${m.overview.substring(0, 200)}${m.overview.length > 200 ? '...' : ''}`);
-      if (m.action_items) lines.push(`  - Action items: ${m.action_items.substring(0, 200)}${m.action_items.length > 200 ? '...' : ''}`);
+  for (const [src, mList] of Object.entries(bySource)) {
+    lines.push(`### ${src.charAt(0).toUpperCase() + src.slice(1)} (${mList.length})`);
+    for (const m of mList.slice(0, 20)) {
+      lines.push(`- **${m.title}** (${m.dateStr || ''})`);
+      if (m.body) lines.push(`  - ${m.body.substring(0, 200)}${m.body.length > 200 ? '...' : ''}`);
+      if (m.participants?.length > 0) lines.push(`  - Participants: ${m.participants.slice(0, 5).join(', ')}`);
+      if (m.actionItems?.length > 0) {
+        for (const ai of m.actionItems.slice(0, 3)) {
+          lines.push(`  - **Action**: ${String(ai).substring(0, 100)}`);
+        }
+      }
+    }
+    if (mList.length > 20) lines.push(`- ... and ${mList.length - 20} more`);
+    lines.push('');
+  }
+}
+
+// ═══ Section 2: Email Highlights ═══
+if (allEmails.length > 0) {
+  lines.push(`## Email Highlights (${allEmails.length})`);
+  lines.push('');
+
+  // Show most recent / important
+  for (const e of allEmails.slice(0, 15)) {
+    const from = e.metadata?.from || e.participants?.[0] || '';
+    lines.push(`- **${e.title}** — ${from} (${e.dateStr || ''})`);
+    if (e.body) lines.push(`  - ${e.body.substring(0, 150)}${e.body.length > 150 ? '...' : ''}`);
+  }
+  if (allEmails.length > 15) lines.push(`- ... and ${allEmails.length - 15} more`);
+  lines.push('');
+}
+
+// ═══ Section 3: Chat Conversations ═══
+if (allChats.length > 0) {
+  // Group by channel
+  const byChannel = {};
+  for (const m of allChats) {
+    const ch = m.title || m.source || 'Unknown';
+    if (!byChannel[ch]) byChannel[ch] = [];
+    byChannel[ch].push(m);
+  }
+
+  lines.push(`## Chat Conversations (${Object.keys(byChannel).length} channels, ${allChats.length} messages)`);
+  lines.push('');
+
+  for (const [ch, msgs] of Object.entries(byChannel)) {
+    lines.push(`### ${ch} (${msgs.length} messages)`);
+    // Show summary — just count and date range
+    const dates = msgs.map(m => m.dateStr).filter(Boolean).sort();
+    if (dates.length > 0) {
+      lines.push(`- Period: ${dates[0]} to ${dates[dates.length - 1]}`);
     }
     lines.push('');
   }
 }
 
-// Section 2: Conversation Insights (from extractions)
-if (extractions.length > 0) {
-  lines.push(`## Conversation Insights`);
-  lines.push(`- **Total extracted insights**: ${extractions.length}`);
+// ═══ Section 4: CRM Activity ═══
+if (allCrm.length > 0) {
+  lines.push(`## CRM Activity (${allCrm.length})`);
   lines.push('');
 
-  // Group by source/chat
+  const bySrc = {};
+  for (const a of allCrm) {
+    const src = a.source || 'unknown';
+    if (!bySrc[src]) bySrc[src] = [];
+    bySrc[src].push(a);
+  }
+
+  for (const [src, activities] of Object.entries(bySrc)) {
+    lines.push(`### ${src.charAt(0).toUpperCase() + src.slice(1)} (${activities.length})`);
+    for (const a of activities.slice(0, 10)) {
+      lines.push(`- **${a.title}** (${a.dateStr || ''})`);
+      if (a.body) lines.push(`  - ${a.body.substring(0, 150)}`);
+    }
+    if (activities.length > 10) lines.push(`- ... and ${activities.length - 10} more`);
+    lines.push('');
+  }
+}
+
+// ═══ Section 5: Task Updates ═══
+if (allTasks.length > 0) {
+  lines.push(`## Task Updates (${allTasks.length})`);
+  lines.push('');
+
+  const bySrc = {};
+  for (const t of allTasks) {
+    const src = t.source || 'unknown';
+    if (!bySrc[src]) bySrc[src] = [];
+    bySrc[src].push(t);
+  }
+
+  for (const [src, taskList] of Object.entries(bySrc)) {
+    lines.push(`### ${src.charAt(0).toUpperCase() + src.slice(1)} (${taskList.length})`);
+    for (const t of taskList.slice(0, 10)) {
+      const assignee = t.metadata?.assignee || t.participants?.[0] || '';
+      const status = t.tags?.[0] || '';
+      lines.push(`- ${status ? `[${status}] ` : ''}**${t.title}**${assignee ? ` — ${assignee}` : ''}`);
+    }
+    if (taskList.length > 10) lines.push(`- ... and ${taskList.length - 10} more`);
+    lines.push('');
+  }
+}
+
+// ═══ Section 6: Conversation Insights (fbtrack extractions) ═══
+if (extractions.length > 0) {
+  lines.push(`## Conversation Insights (${extractions.length})`);
+  lines.push('');
+
   const bySource = {};
   for (const e of extractions) {
     const source = e.chatTitle || e.source || 'Unknown';
@@ -156,35 +283,52 @@ if (extractions.length > 0) {
   }
 }
 
-// Section 3: Action Items
-lines.push(`## Action Items`);
-lines.push('');
-lines.push('| Owner | Action | Source | Due |');
-lines.push('|-------|--------|--------|-----|');
+// ═══ Section 7: All Action Items ═══
+const allActionItems = [];
 
-// Extract action items from meetings
-for (const m of partnerMeetings) {
-  if (m.action_items) {
-    const items = m.action_items.split('\n').filter(l => l.trim());
-    for (const item of items.slice(0, 3)) {
-      lines.push(`| TBD | ${item.trim().substring(0, 80)} | ${m.title} | - |`);
+// From meetings
+for (const m of allMeetings) {
+  if (m.actionItems?.length > 0) {
+    for (const ai of m.actionItems) {
+      allActionItems.push({ action: String(ai), source: m.title, date: m.dateStr });
     }
   }
 }
-
-// Extract action items from conversation insights
+// From extractions
 for (const e of extractions) {
   if (e.action) {
-    lines.push(`| TBD | ${e.action.substring(0, 80)} | ${e.chatTitle || 'Chat'} | - |`);
+    allActionItems.push({ action: e.action, source: e.chatTitle || 'Chat', date: e.date || '' });
+  }
+}
+// From tasks
+for (const t of allTasks) {
+  if (t.tags?.includes('open') || !t.tags?.includes('completed')) {
+    allActionItems.push({ action: t.title, source: t.source, date: t.dateStr, assignee: t.metadata?.assignee });
   }
 }
 
-lines.push('');
+if (allActionItems.length > 0) {
+  lines.push(`## Action Items (${allActionItems.length})`);
+  lines.push('');
+  lines.push('| Owner | Action | Source | Date |');
+  lines.push('|-------|--------|--------|------|');
+
+  for (const ai of allActionItems.slice(0, 30)) {
+    const owner = ai.assignee || 'TBD';
+    lines.push(`| ${owner} | ${ai.action.substring(0, 80)} | ${ai.source} | ${ai.date || '-'} |`);
+  }
+  if (allActionItems.length > 30) lines.push(`\n*... and ${allActionItems.length - 30} more action items*`);
+  lines.push('');
+}
+
 lines.push('---');
-lines.push('*Report generated by fbtrack*');
+lines.push('*Report generated by CEO Agent (fbtrack + Composio)*');
 
 const report = lines.join('\n');
 const outPath = '/tmp/merged_report.md';
 fs.writeFileSync(outPath, report);
+
+const total = allMeetings.length + allEmails.length + allChats.length + allCrm.length + allTasks.length + extractions.length;
 console.log(`Report written to ${outPath}`);
-console.log(`Meetings: ${meetings.length}, Extractions: ${extractions.length}`);
+console.log(`Data: ${allMeetings.length} meetings, ${allEmails.length} emails, ${allChats.length} chats, ${allCrm.length} CRM, ${allTasks.length} tasks, ${extractions.length} extractions`);
+console.log(`Total: ${total} items`);
