@@ -106,13 +106,22 @@ node scripts/fetch_fireflies.cjs 10
 node scripts/merge_report.cjs --date-range "Mar 18 - Mar 25, 2026"
 cp /tmp/merged_report.md reports/weekly-report-$(date +%Y-%m-%d).md
 
-# 6. Update CRM latest interaction dates (optional)
-node scripts/sync_attio_interactions.cjs
+# 6. OR: Fetch meetings from Zoom/Meet/Teams/Fathom via Composio
+node scripts/composio-meeting-sync.js --days 10
 
-# 7. Sync meeting notes to CRM (optional)
-node scripts/sync_attio_notes.cjs
+# 7. Generate merged report
+node scripts/merge_report.cjs --date-range "Mar 18 - Mar 25, 2026"
+cp /tmp/merged_report.md reports/weekly-report-$(date +%Y-%m-%d).md
 
-# 8. Push report to Notion (via Composio)
+# 8. Sync to CRM (auto-detects: HubSpot, Salesforce, Pipedrive, Attio, Zoho)
+node scripts/composio-crm-sync.js
+# OR use direct Attio API:
+# node scripts/sync_attio_interactions.cjs
+
+# 9. Sync action items to project management (Linear, Jira, Asana, etc.)
+node scripts/composio-action-items-sync.js --provider linear
+
+# 10. Push report to Notion (via Composio)
 # See "Push to Notion" section below
 ```
 
@@ -162,6 +171,46 @@ mcporter call clawdi-mcp COMPOSIO_MULTI_EXECUTE_TOOL --args "$(
 ```
 
 Replace `<NOTION_PARENT_PAGE_ID>` with the actual Notion page ID where reports should be stored.
+
+---
+
+## Composio Integrations (Multi-Tool Support)
+
+The agent supports multiple tools for each category via Composio. Users connect their preferred tools in the Clawdi dashboard.
+
+### Meeting Transcript Sources
+
+| Tool | Script | Notes |
+|------|--------|-------|
+| Fireflies.ai | `scripts/fetch_fireflies.cjs` | Direct API (needs API key) |
+| Zoom | `scripts/composio-meeting-sync.js --provider zoom` | Via Composio |
+| Google Meet | `scripts/composio-meeting-sync.js --provider google-meet` | Via Composio (Drive transcripts) |
+| Microsoft Teams | `scripts/composio-meeting-sync.js --provider teams` | Via Composio |
+| Fathom | `scripts/composio-meeting-sync.js --provider fathom` | Via Composio |
+| Auto-detect | `scripts/composio-meeting-sync.js` | Tries all connected providers |
+
+### CRM Sync
+
+| Tool | Script | Notes |
+|------|--------|-------|
+| Attio | `scripts/sync_attio_interactions.cjs` | Direct API (needs API key) |
+| HubSpot | `scripts/composio-crm-sync.js --provider hubspot` | Via Composio |
+| Salesforce | `scripts/composio-crm-sync.js --provider salesforce` | Via Composio |
+| Pipedrive | `scripts/composio-crm-sync.js --provider pipedrive` | Via Composio |
+| Zoho CRM | `scripts/composio-crm-sync.js --provider zoho` | Via Composio |
+| Auto-detect | `scripts/composio-crm-sync.js` | Tries first connected CRM |
+
+### Action Items → Project Management
+
+| Tool | Script |
+|------|--------|
+| Linear | `scripts/composio-action-items-sync.js --provider linear` |
+| Jira | `scripts/composio-action-items-sync.js --provider jira` |
+| Asana | `scripts/composio-action-items-sync.js --provider asana` |
+| Monday.com | `scripts/composio-action-items-sync.js --provider monday` |
+| ClickUp | `scripts/composio-action-items-sync.js --provider clickup` |
+| Trello | `scripts/composio-action-items-sync.js --provider trello` |
+| Notion | `scripts/composio-action-items-sync.js --provider notion` |
 
 ---
 

@@ -99,13 +99,34 @@ When asked to run a weekly sync, business report, or conversation tracking:
 ```bash
 cd skills/fbtrack-sync && set -a && . .env && set +a
 
+# Conversation sync
 npx fbtrack sync                                    # Telegram
 npx fbtrack slack-sync --days 10                    # Slack
 npx fbtrack extract --all --agent sales-extractor   # AI extraction
-node scripts/fetch_fireflies.cjs 10                 # Fireflies
+
+# Meeting transcripts (choose one or more)
+node scripts/fetch_fireflies.cjs 10                 # Fireflies (direct API)
+node scripts/composio-meeting-sync.js --days 10     # Zoom/Meet/Teams/Fathom (Composio)
+
+# Report
 node scripts/merge_report.cjs --date-range "..."    # Merged report
-node scripts/sync_attio_interactions.cjs            # CRM sync
+
+# CRM sync (auto-detects connected CRM)
+node scripts/composio-crm-sync.js                   # HubSpot/Salesforce/Pipedrive/Attio/Zoho
+node scripts/sync_attio_interactions.cjs            # OR: Attio direct API
+
+# Action items → project management
+node scripts/composio-action-items-sync.js --provider linear  # Linear/Jira/Asana/etc.
 ```
+
+### Supported Integrations
+
+| Category | Tools (via Composio) |
+|----------|---------------------|
+| **Meeting transcripts** | Zoom, Google Meet, Microsoft Teams, Fathom, Fireflies |
+| **CRM** | HubSpot, Salesforce, Pipedrive, Attio, Zoho CRM |
+| **Project management** | Linear, Jira, Asana, Monday.com, ClickUp, Trello, Notion |
+| **Messaging** | Telegram (direct), Slack (direct + Composio) |
 
 ---
 

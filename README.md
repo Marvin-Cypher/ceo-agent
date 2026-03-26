@@ -19,11 +19,16 @@ Summarize any content type with structured reports and mind maps:
 - CRM sync (Attio) for interaction dates and meeting notes
 - Push reports to Notion
 
-### Composio Integrations
-Connected apps available to all Clawdi users:
-- Gmail, Google Calendar, Google Drive
-- Notion, Slack
-- Any other connected Composio apps
+### Composio Integrations (20+ Tools)
+
+| Category | Supported Tools |
+|----------|----------------|
+| **Meeting Transcripts** | Zoom, Google Meet, Microsoft Teams, Fathom, Fireflies |
+| **CRM** | HubSpot, Salesforce, Pipedrive, Attio, Zoho CRM |
+| **Project Management** | Linear, Jira, Asana, Monday.com, ClickUp, Trello |
+| **Productivity** | Gmail, Google Calendar, Google Drive, Notion, Slack |
+
+Users connect their preferred tools in the Clawdi dashboard — the agent auto-detects what's available.
 
 ## Quick Start
 

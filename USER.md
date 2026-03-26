@@ -30,13 +30,16 @@ mcporter call clawdi-mcp COMPOSIO_MANAGE_CONNECTIONS --args '{"toolkits": ["noti
 
 ### Common Connected Apps
 
-| App | Use For |
-|-----|---------|
-| Gmail | Fetch, send, draft emails |
-| Google Calendar | List events, check schedule |
-| Google Drive | File management |
-| Notion | Pages, databases, notes |
-| Slack | Channels, messages, DMs |
+| Category | Apps | Use For |
+|----------|------|---------|
+| **Email** | Gmail | Fetch, send, draft emails |
+| **Calendar** | Google Calendar | List events, check schedule |
+| **Storage** | Google Drive | File management |
+| **Notes/Wiki** | Notion | Pages, databases, notes |
+| **Messaging** | Slack | Channels, messages, DMs |
+| **Meetings** | Zoom, Google Meet, Teams, Fathom, Fireflies | Transcripts, recordings, notes |
+| **CRM** | HubSpot, Salesforce, Pipedrive, Attio, Zoho | Company records, notes, interactions |
+| **Project Mgmt** | Linear, Jira, Asana, Monday.com, ClickUp, Trello | Tasks, issues, action items |
 
 ### Rules
 - **ALWAYS call COMPOSIO_SEARCH_TOOLS first** — do not guess tool names
