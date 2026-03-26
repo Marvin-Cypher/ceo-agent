@@ -1,0 +1,30 @@
+{
+  "id": "content-summarizer",
+  "name": "Content Summarizer",
+  "description": "Intelligent summarizer supporting 8 input types: audio, video, online videos (YouTube, TikTok, Instagram, etc.), PDF, images, web pages, and text documents. Auto-transcribes, detects content scenarios, generates structured Markdown reports and mind map PNGs.",
+  "model": "{YOUR_MODEL_ID}",
+  "os": [],
+  "skills": ["summarize-pro", "markmap-mindmap-export"],
+  "tools": { "allow": ["group:subagent"] },
+  "formData": {
+    "fields": [
+      {
+        "key": "transcribe_api_key",
+        "label": "Transcription API Key",
+        "type": "password",
+        "required": false,
+        "placeholder": "sk-...",
+        "description": "OpenAI-compatible API key for audio/video transcription (supports OpenAI Whisper, Deepgram, etc.). Only needed for audio/video content; PDF, images, web pages, and text don't require this."
+      },
+      {
+        "key": "transcribe_base_url",
+        "label": "Transcription API Base URL",
+        "type": "text",
+        "required": false,
+        "placeholder": "https://api.openai.com/v1",
+        "description": "Transcription API endpoint. Leave blank to use OpenAI. Fill in the address for other compatible services."
+      }
+    ],
+    "target": ".secrets/transcribe-config.json"
+  }
+}

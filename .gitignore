@@ -1,0 +1,15 @@
+# Runtime
+.secrets/
+summarizer-files/
+files/
+*.mp3
+*.mp4
+*.wav
+*.srt
+*.png
+node_modules/
+venv/
+
+# OS
+.DS_Store
+Thumbs.db
