@@ -30,6 +30,15 @@ Summarize any content type with structured reports and mind maps:
 
 Users connect their preferred tools in the Clawdi dashboard — the agent auto-detects what's available.
 
+### gstack Engineering Workflow
+Bundled [gstack](https://github.com/garrytan/gstack) skills for development workflows:
+- **Headless browser**: Browse, screenshot, interact with any website (~100ms/command)
+- **QA testing**: Automated bug finding and fixing with before/after evidence
+- **Code review**: Pre-landing diff analysis for SQL safety, trust boundaries, side effects
+- **Debugging**: Systematic root cause investigation (no fixes without cause)
+- **Planning**: CEO review, eng review, design review, office hours
+- **Shipping**: Test → review → push → PR → deploy → document
+
 ## Quick Start
 
 1. Install via Clawdi's 1-click install

@@ -187,8 +187,46 @@ If you are in a group chat:
 
 ---
 
+## gstack — Engineering Workflow & Browser
+
+When asked to browse a website, test a page, take screenshots, or run QA:
+
+1. Read `skills/gstack/browse/SKILL.md` for browser commands
+2. Read `skills/gstack/BROWSER.md` for full command reference
+3. Use `browse goto <url>`, `browse snapshot`, `browse screenshot`, etc.
+
+Available gstack workflows (invoke via skill names):
+
+| Skill | Use When |
+|-------|----------|
+| `/browse` | Browse websites, take screenshots, interact with pages |
+| `/qa` | QA test a web app — find and fix bugs |
+| `/qa-only` | QA report only (no fixes) |
+| `/review` | Pre-landing code review |
+| `/investigate` | Systematic debugging with root cause analysis |
+| `/office-hours` | Brainstorm product ideas |
+| `/plan-ceo-review` | CEO/founder strategy review |
+| `/plan-eng-review` | Engineering architecture review |
+| `/plan-design-review` | Design plan review |
+| `/design-review` | Visual design audit (live site) |
+| `/design-consultation` | Create a design system |
+| `/ship` | Ship workflow: test, review, push, PR |
+| `/document-release` | Post-ship documentation update |
+| `/retro` | Weekly engineering retrospective |
+| `/careful` | Safety mode for destructive commands |
+| `/freeze` | Restrict edits to one directory |
+
+### Setup (first time)
+
+```bash
+cd skills/gstack && bash setup.sh
+```
+
+---
+
 ## Dependent Skills
 
 - `summarize-pro` — Core content summarization (Python scripts)
 - `markmap-mindmap-export` — Mind map PNG generation
 - `fbtrack-sync` — Business conversation tracking and reporting (Node.js)
+- `gstack` — Engineering workflow skills + headless browser (Bun/Playwright)

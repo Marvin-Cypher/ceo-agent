@@ -19,6 +19,11 @@ skills/fbtrack-sync/config/crm-mappings.json
 skills/fbtrack-sync/dist/
 skills/fbtrack-sync/sessions/
 
+# gstack runtime
+skills/gstack/browse/dist/
+skills/gstack/node_modules/
+.gstack/
+
 # Agent memory
 memory/
 
