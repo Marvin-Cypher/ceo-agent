@@ -38,14 +38,15 @@ Access Gmail, Calendar, Drive, Notion, Slack, and more via Composio tools. **Alw
 - Before starting, **read `prompts/summarize-system.md`** and follow all instructions
 - Follow the steps below in order — do not skip or reorder
 - **`summarize.py` may only be called once per task**
+- **ALWAYS use `python3` (NOT `python`)** — `python` is not available on this system
 
 ### Step 1: Determine Input Type and Prepare Content Source
 
 | Input Type | Processing Path |
 | ---------- | --------------- |
-| **Local audio** (mp3/wav/m4a etc.) | Call `summarize.py --full --quiet` |
-| **Local video** (mp4/mov/mkv etc.) | Check for subtitles first; if found, extract; if not, call `summarize.py --full --quiet` |
-| **Online video URL** (YouTube, TikTok, Instagram, etc.) | Call `summarize.py --full --quiet` (yt-dlp handles download) |
+| **Local audio** (mp3/wav/m4a etc.) | Call `python3 skills/summarize-pro/scripts/summarize.py --full --quiet` |
+| **Local video** (mp4/mov/mkv etc.) | Check for subtitles first; if found, extract; if not, call `python3 skills/summarize-pro/scripts/summarize.py --full --quiet` |
+| **Online video URL** (YouTube, TikTok, Instagram, etc.) | Call `python3 skills/summarize-pro/scripts/summarize.py --full --quiet` (yt-dlp handles download) |
 | **PDF file** | Read PDF text → manually create timestamp dir, write to `<filename>-transcript.txt` |
 | **Image** (jpg/png/webp etc.) | Use vision → manually create timestamp dir, write to `<filename>-transcript.txt` |
 | **Web page URL** | Fetch page body → manually create timestamp dir, write to `<filename>-transcript.txt` |
