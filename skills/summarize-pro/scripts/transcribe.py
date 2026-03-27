@@ -32,7 +32,7 @@ if not os.environ.get('SSL_CERT_FILE'):
 
 import re
 
-MODEL = "gpt-4o-mini-transcribe"
+MODEL = os.environ.get("TRANSCRIBE_MODEL", "gpt-4o-transcribe")
 
 OPENCLAW_HOME = os.path.join(os.path.expanduser("~"), ".openclaw")
 
@@ -94,14 +94,23 @@ def _load_auth():
         except Exception:
             pass
 
-    # Priority 4: OpenClaw model proxy (openclaw.json has API key for a transcription-capable model)
+    # Priority 4: OpenClaw model proxy (openclaw.json — prefer provider with transcription model)
     config_path = os.path.join(OPENCLAW_HOME, "openclaw.json")
     if os.path.isfile(config_path):
         try:
             with open(config_path) as f:
                 cfg = json.load(f)
             providers = cfg.get("models", {}).get("providers", {})
-            # Find a provider with an "openai" key that has a transcription model
+            # First pass: find provider that has a transcription model
+            for pname, prov in providers.items():
+                models = [m.get("id", "") for m in prov.get("models", [])]
+                has_transcribe = any("transcribe" in m for m in models)
+                if has_transcribe:
+                    api_key = prov.get("apiKey") or prov.get("headers", {}).get("x-api-key", "")
+                    base_url = prov.get("baseUrl", "").rstrip("/")
+                    if api_key and base_url:
+                        return api_key, base_url, "openclaw-proxy"
+            # Second pass: any provider with credentials
             for pname, prov in providers.items():
                 api_key = prov.get("apiKey") or prov.get("headers", {}).get("x-api-key", "")
                 base_url = prov.get("baseUrl", "").rstrip("/")

@@ -46,11 +46,41 @@ Access Gmail, Calendar, Drive, Notion, Slack, and more via Composio tools. **Alw
 | ---------- | --------------- |
 | **Local audio** (mp3/wav/m4a etc.) | Call `python3 skills/summarize-pro/scripts/summarize.py --full --quiet` |
 | **Local video** (mp4/mov/mkv etc.) | Check for subtitles first; if found, extract; if not, call `python3 skills/summarize-pro/scripts/summarize.py --full --quiet` |
-| **Online video URL** (YouTube, TikTok, Instagram, etc.) | Call `python3 skills/summarize-pro/scripts/summarize.py --full --quiet` (yt-dlp handles download) |
+| **YouTube video URL** | Use Composio YouTube (see below) to get transcript, then create timestamp dir and write to `<filename>-transcript.txt` |
+| **Other online video URL** (TikTok, Instagram, etc.) | Call `python3 skills/summarize-pro/scripts/summarize.py --full --quiet` (yt-dlp handles download) |
 | **PDF file** | Read PDF text → manually create timestamp dir, write to `<filename>-transcript.txt` |
 | **Image** (jpg/png/webp etc.) | Use vision → manually create timestamp dir, write to `<filename>-transcript.txt` |
 | **Web page URL** | Fetch page body → manually create timestamp dir, write to `<filename>-transcript.txt` |
 | **Text document** (txt/md/docx) | Read file → manually create timestamp dir, write to `<filename>-transcript.txt` |
+
+### YouTube Transcript via Composio
+
+For YouTube videos, use Composio YouTube tools to get the transcript (avoids yt-dlp auth issues):
+
+```bash
+# Step 1: Get video details
+mcporter call clawdi-mcp.COMPOSIO_MULTI_EXECUTE_TOOL \
+  'tools=[{"tool_slug":"YOUTUBE_VIDEO_DETAILS","arguments":{"video_id":"VIDEO_ID","part":"snippet,contentDetails,statistics"}}]'
+
+# Step 2: List caption tracks
+mcporter call clawdi-mcp.COMPOSIO_MULTI_EXECUTE_TOOL \
+  'tools=[{"tool_slug":"YOUTUBE_LIST_CAPTION_TRACK","arguments":{"video_id":"VIDEO_ID"}}]'
+
+# Step 3: Download captions (if available and user owns the video)
+mcporter call clawdi-mcp.COMPOSIO_MULTI_EXECUTE_TOOL \
+  'tools=[{"tool_slug":"YOUTUBE_LOAD_CAPTIONS","arguments":{"id":"CAPTION_TRACK_ID","tfmt":"srt"}}]'
+```
+
+**If YOUTUBE_LOAD_CAPTIONS fails (403 — not owned by user)**, use `COMPOSIO_REMOTE_WORKBENCH` fallback:
+
+```bash
+mcporter call clawdi-mcp.COMPOSIO_MULTI_EXECUTE_TOOL \
+  'tools=[{"tool_slug":"COMPOSIO_REMOTE_WORKBENCH","arguments":{"code":"from youtube_transcript_api import YouTubeTranscriptApi\napi=YouTubeTranscriptApi()\nsegs=api.fetch(\"VIDEO_ID\",languages=[\"en\",\"en-US\",\"en-GB\"])\nout=[]\nfor s in segs:\n st=getattr(s,\"start\",s.get(\"start\",0) if isinstance(s,dict) else 0)\n tx=getattr(s,\"text\",s.get(\"text\",\"\") if isinstance(s,dict) else \"\")\n m,sec=divmod(int(st or 0),60)\n if tx: out.append(f\"[{m:02d}:{sec:02d}] {tx}\")\nprint(chr(10).join(out))"}}]'
+```
+
+Save the transcript to `summarizer-files/<timestamp>/<filename>-transcript.txt`, then proceed to Step 2.
+
+> **Do NOT** try to use the browser, install pip packages, or scrape YouTube directly. If all Composio methods fail, tell the user the transcript is unavailable.
 
 ### Step 2: Generate Final Summary Report
 
