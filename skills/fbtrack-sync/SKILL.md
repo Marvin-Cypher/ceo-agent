@@ -29,7 +29,7 @@ fbtrack is a CLI tool that syncs business conversations from multiple channels, 
 ```bash
 # Build fbtrack from the bundled source
 cd skills/fbtrack-sync
-npm install && npm run build
+npm install --legacy-peer-deps && npm run build
 
 # Initialize directory structure
 npx fbtrack init

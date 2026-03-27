@@ -8,7 +8,7 @@
     "fbtrack": "./dist/cli/index.js"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "npx tsc",
     "dev": "tsx src/cli/index.ts",
     "start": "node dist/cli/index.js",
     "clean": "rm -rf dist",
