@@ -40,12 +40,16 @@ npx fbtrack init
 Create `.env` in the fbtrack-sync directory with your credentials:
 
 ```bash
-# Required for Telegram sync
+# Required for Telegram sync (get from https://my.telegram.org)
 TELEGRAM_API_ID=your_api_id
 TELEGRAM_API_HASH=your_api_hash
 
-# Required for AI extraction
-OPENAI_API_KEY=your_openai_key
+# AI extraction: On Clawdi, use the platform proxy (no separate key needed).
+# Extract from /root/.openclaw/openclaw.json — see AGENTS.md for details.
+# Only set these if running fbtrack outside of Clawdi:
+# OPENAI_API_KEY=your_openai_key
+# OPENAI_BASE_URL=https://api.openai.com/v1
+# OPENAI_MODEL=gpt-4o-mini
 
 # Optional: Slack sync (or use Composio)
 SLACK_BOT_TOKEN=xoxb-...

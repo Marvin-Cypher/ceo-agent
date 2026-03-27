@@ -136,6 +136,35 @@ node scripts/merge_report.cjs --date-range "Mar 18 - Mar 25, 2026"
 cat /tmp/merged_report.md
 ```
 
+**Step 2b: AI extraction on conversation data** (uses platform model — no separate API key needed)
+
+fbtrack extraction uses the OpenAI SDK. On Clawdi, reuse the platform's model proxy instead of asking for a separate `OPENAI_API_KEY`:
+
+```bash
+# Extract proxy credentials from openclaw config
+PROXY_URL=$(cat /root/.openclaw/openclaw.json | node -e "
+  const cfg=JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
+  const p=Object.values(cfg.models?.providers||{})[0];
+  if(p) console.log(p.baseUrl);
+")
+PROXY_KEY=$(cat /root/.openclaw/openclaw.json | node -e "
+  const cfg=JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
+  const p=Object.values(cfg.models?.providers||{})[0];
+  if(p) console.log(p.apiKey);
+")
+PROXY_MODEL=$(cat /root/.openclaw/openclaw.json | node -e "
+  const cfg=JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
+  const p=Object.values(cfg.models?.providers||{})[0];
+  if(p?.models?.[0]) console.log(p.models[0].id);
+")
+
+cd skills/fbtrack-sync
+OPENAI_API_KEY="$PROXY_KEY" OPENAI_BASE_URL="$PROXY_URL" OPENAI_MODEL="$PROXY_MODEL" \
+  npx fbtrack extract --all --agent sales-extractor
+```
+
+> **NEVER ask the user for an OPENAI_API_KEY.** The platform proxy is always available.
+
 **Step 3: Telegram sync** (requires separate setup — NOT via Composio)
 
 > **IMPORTANT**: Telegram does NOT work via Composio. Composio's Telegram is bot-based and cannot access group chats. Telegram requires MTProto user-account authentication via `fbtrack login`.
