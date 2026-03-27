@@ -17,15 +17,21 @@ Use `COMPOSIO_SEARCH_TOOLS` to discover available tools for any connected app.
 
 ### How to Execute Composio Tools
 
+Use `mcporter` with **dot notation** (`clawdi-mcp.TOOL_NAME`):
+
 ```bash
-# Search for tools
-mcporter call clawdi-mcp COMPOSIO_SEARCH_TOOLS --args '{"query": "your task"}' --output json
+# Search for tools (ALWAYS do this first)
+mcporter call clawdi-mcp.COMPOSIO_SEARCH_TOOLS \
+  'queries=[{"use_case":"your task description"}]'
 
 # Execute a tool
-mcporter call clawdi-mcp COMPOSIO_MULTI_EXECUTE_TOOL --args '{"tools": [{"tool_slug": "TOOL_NAME", "arguments": {...}}]}' --output json
+mcporter call clawdi-mcp.COMPOSIO_MULTI_EXECUTE_TOOL \
+  'tools=[{"tool_slug":"TOOL_NAME","arguments":{...}}]' \
+  'sync_response_to_workbench=false'
 
 # Check/create connections
-mcporter call clawdi-mcp COMPOSIO_MANAGE_CONNECTIONS --args '{"toolkits": ["notion"]}' --output json
+mcporter call clawdi-mcp.COMPOSIO_MANAGE_CONNECTIONS \
+  'toolkits=["notion"]'
 ```
 
 ### Common Connected Apps

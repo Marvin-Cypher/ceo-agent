@@ -94,60 +94,116 @@ When asked to run a weekly sync, business report, or conversation tracking:
 2. Follow the Weekly Sync Pipeline steps in order
 3. Use Composio to push reports to Notion if configured
 
-### Quick Reference
+### Quick Reference — Data Fetching via Composio
+
+When asked to fetch business data, use Composio tools directly (not shell scripts):
+
+**Step 1: Fetch data from connected apps using Composio**
+
+For each data source the user wants, search for the right tool and execute it:
+
+```bash
+# Example: Fetch Gmail emails
+mcporter call clawdi-mcp.COMPOSIO_SEARCH_TOOLS 'queries=[{"use_case":"fetch recent emails"}]'
+mcporter call clawdi-mcp.COMPOSIO_MULTI_EXECUTE_TOOL \
+  'tools=[{"tool_slug":"GMAIL_FETCH_EMAILS","arguments":{"max_results":50}}]'
+
+# Example: Fetch Slack messages
+mcporter call clawdi-mcp.COMPOSIO_SEARCH_TOOLS 'queries=[{"use_case":"list slack messages"}]'
+
+# Example: Fetch HubSpot contacts/deals
+mcporter call clawdi-mcp.COMPOSIO_SEARCH_TOOLS 'queries=[{"use_case":"list hubspot deals"}]'
+
+# Example: Fetch Linear tasks
+mcporter call clawdi-mcp.COMPOSIO_SEARCH_TOOLS 'queries=[{"use_case":"list linear issues"}]'
+
+# Example: Fetch Google Calendar events (meeting notes)
+mcporter call clawdi-mcp.COMPOSIO_SEARCH_TOOLS 'queries=[{"use_case":"list google calendar events"}]'
+```
+
+Save fetched data as JSON to `skills/fbtrack-sync/data/` directories:
+- `data/gmail/` — emails
+- `data/meetings/` — meeting transcripts/notes
+- `data/slack/` — channel messages
+- `data/crm/` — CRM activities
+- `data/tasks/` — task updates
+
+**Step 2: Generate merged report**
+
+```bash
+cd skills/fbtrack-sync
+node scripts/merge_report.cjs --date-range "Mar 18 - Mar 25, 2026"
+cat /tmp/merged_report.md
+```
+
+**Step 3 (optional): Telegram direct sync** (if configured)
 
 ```bash
 cd skills/fbtrack-sync && set -a && . .env && set +a
-
-# Step 1: Pull ALL data (auto-detects connected apps)
-node scripts/composio-unified-sync.js --days 10     # Gmail/Zoom/Meet/Teams/HubSpot/Linear/etc.
-npx fbtrack sync                                    # Telegram (direct)
-npx fbtrack slack-sync --days 10                    # Slack (direct, richer data)
-
-# Step 2: AI extraction
+npx fbtrack sync
 npx fbtrack extract --all --agent sales-extractor
-
-# Step 3: Generate report (reads ALL data/)
-node scripts/merge_report.cjs --date-range "..."
-
-# Step 4: Write back
-node scripts/composio-crm-sync.js                   # → CRM (auto-detect)
-node scripts/composio-action-items-sync.js           # → Project mgmt
 ```
 
-### Auto-detected Sources (via Composio)
+### Supported Data Sources
 
 | Category | Tools |
 |----------|-------|
 | **Email** | Gmail |
-| **Meetings** | Zoom, Google Meet, Microsoft Teams, Fathom, Fireflies |
-| **Chat** | Slack (Composio + direct), Telegram (direct only) |
+| **Meetings** | Google Calendar, Zoom, Google Meet, Microsoft Teams, Fathom, Fireflies |
+| **Chat** | Slack (via Composio), Telegram (direct via fbtrack) |
 | **CRM** | HubSpot, Salesforce, Pipedrive, Attio, Zoho CRM |
 | **Tasks** | Linear, Jira, Asana, Monday.com, ClickUp |
 
 All data flows into `data/` → `merge_report.cjs` → one unified weekly report.
 
+### Important: Check connections first
+
+Before fetching, verify the user's apps are connected:
+
+```bash
+mcporter call clawdi-mcp.COMPOSIO_MANAGE_CONNECTIONS 'toolkits=["gmail","slack","hubspot"]'
+```
+
+If any toolkit shows `has_active_connection: false`, share the `redirect_url` with the user to authorize.
+
 ---
 
 ## Composio Integration Rules
 
-Your user has connected apps via Composio. **Always use Composio tools first** before falling back to CLI or web scraping.
+Your user has connected apps via Composio. The `composio` skill is built-in and pre-configured — use `mcporter` with **dot notation** to call tools.
+
+**Always use Composio tools first** before falling back to CLI or web scraping.
+
+### Command Syntax
 
 ```bash
-# Search for tools
-mcporter call clawdi-mcp COMPOSIO_SEARCH_TOOLS --args '{"query": "your task"}' --output json
+# Search for tools (ALWAYS do this first — never guess tool slugs)
+mcporter call clawdi-mcp.COMPOSIO_SEARCH_TOOLS \
+  'queries=[{"use_case":"fetch recent emails from gmail"}]'
 
 # Execute a tool
-mcporter call clawdi-mcp COMPOSIO_MULTI_EXECUTE_TOOL --args '{"tools": [{"tool_slug": "TOOL_NAME", "arguments": {...}}]}' --output json
+mcporter call clawdi-mcp.COMPOSIO_MULTI_EXECUTE_TOOL \
+  'tools=[{"tool_slug":"GMAIL_FETCH_EMAILS","arguments":{"max_results":20}}]' \
+  'sync_response_to_workbench=false'
 
-# Check connections
-mcporter call clawdi-mcp COMPOSIO_MANAGE_CONNECTIONS --args '{"toolkits": ["notion"]}' --output json
+# Check/create connections
+mcporter call clawdi-mcp.COMPOSIO_MANAGE_CONNECTIONS \
+  'toolkits=["gmail"]'
 ```
 
-**Rules**:
-- ALWAYS call `COMPOSIO_SEARCH_TOOLS` first — do not guess tool names
-- If a tool fails, check connection via `COMPOSIO_MANAGE_CONNECTIONS`
-- If disconnected, ask user to reconnect via Clawdi dashboard
+### Workflow
+
+1. **Search first**: Call `COMPOSIO_SEARCH_TOOLS` to find the right tool slugs
+2. **Check connections**: If `has_active_connection` is false, call `COMPOSIO_MANAGE_CONNECTIONS` and share the `redirect_url` with the user to complete OAuth
+3. **Execute**: Use exact tool slugs and argument names from search results
+4. If a tool fails, check connection status via `COMPOSIO_MANAGE_CONNECTIONS`
+
+### Rules
+- ALWAYS search first — do not guess tool names or slugs
+- Use **dot notation**: `clawdi-mcp.TOOL_NAME` (not `clawdi-mcp TOOL_NAME`)
+- Do not mention toolkit names (like `googlesuper`) to users — just say "Google"
+- Confirm with user before side-effecting operations (sending email, creating issues)
+- Group independent actions into one `COMPOSIO_MULTI_EXECUTE_TOOL` call
 
 ---
 
