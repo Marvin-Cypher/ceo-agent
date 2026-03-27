@@ -136,35 +136,49 @@ node scripts/merge_report.cjs --date-range "Mar 18 - Mar 25, 2026"
 cat /tmp/merged_report.md
 ```
 
-**Step 3 (optional): Telegram direct sync** (if configured)
+**Step 3: Telegram sync** (requires separate setup — NOT via Composio)
+
+> **IMPORTANT**: Telegram does NOT work via Composio. Composio's Telegram is bot-based and cannot access group chats. Telegram requires MTProto user-account authentication via `fbtrack login`.
+
+If the user wants Telegram sync:
+
+1. They must provide `TELEGRAM_API_ID` and `TELEGRAM_API_HASH` (from https://my.telegram.org)
+2. Save to `skills/fbtrack-sync/.env`
+3. Run the interactive login:
 
 ```bash
 cd skills/fbtrack-sync && set -a && . .env && set +a
-npx fbtrack sync
+npx fbtrack login          # Interactive: enters phone number + code
+npx fbtrack sync           # Syncs messages from tracked chats
 npx fbtrack extract --all --agent sales-extractor
 ```
 
+If Telegram is not configured, skip this step — do NOT offer Composio Telegram connection.
+
 ### Supported Data Sources
 
-| Category | Tools |
-|----------|-------|
-| **Email** | Gmail |
-| **Meetings** | Google Calendar, Zoom, Google Meet, Microsoft Teams, Fathom, Fireflies |
-| **Chat** | Slack (via Composio), Telegram (direct via fbtrack) |
-| **CRM** | HubSpot, Salesforce, Pipedrive, Attio, Zoho CRM |
-| **Tasks** | Linear, Jira, Asana, Monday.com, ClickUp |
+| Category | Method | Notes |
+|----------|--------|-------|
+| **Email** | Gmail via Composio | `COMPOSIO_SEARCH_TOOLS` |
+| **Meetings** | Google Calendar, Zoom, Meet, Teams, Fathom, Fireflies via Composio | `COMPOSIO_SEARCH_TOOLS` |
+| **Chat — Slack** | Slack via Composio | `COMPOSIO_SEARCH_TOOLS` |
+| **Chat — Telegram** | **fbtrack direct only** (MTProto) | NOT Composio — requires API ID/HASH + `fbtrack login` |
+| **CRM** | HubSpot, Salesforce, Pipedrive, Attio, Zoho via Composio | `COMPOSIO_SEARCH_TOOLS` |
+| **Tasks** | Linear, Jira, Asana, Monday.com, ClickUp via Composio | `COMPOSIO_SEARCH_TOOLS` |
 
 All data flows into `data/` → `merge_report.cjs` → one unified weekly report.
 
 ### Important: Check connections first
 
-Before fetching, verify the user's apps are connected:
+Before fetching via Composio, verify the user's apps are connected:
 
 ```bash
 mcporter call clawdi-mcp.COMPOSIO_MANAGE_CONNECTIONS 'toolkits=["gmail","slack","hubspot"]'
 ```
 
 If any toolkit shows `has_active_connection: false`, share the `redirect_url` with the user to authorize.
+
+> **Never offer Composio for Telegram.** If the user asks about Telegram, explain they need API ID/HASH from https://my.telegram.org and must run `fbtrack login` for interactive authentication.
 
 ---
 
