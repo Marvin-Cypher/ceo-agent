@@ -88,7 +88,17 @@ Save the transcript to `summarizer-files/<timestamp>/<filename>-transcript.txt`,
 - **Other types**: Read `*-transcript.txt`, generate final summary per `prompts/summarize-system.md`
 - Write to `*-summary-final.md` in the same timestamp directory
 
-### Step 3: Generate Mind Map (mandatory)
+### Step 3: Output Results (do this IMMEDIATELY after Step 2)
+
+**IMPORTANT: Always deliver the summary to the user first, before attempting any optional extras.**
+
+```text
+Full report: <summary-final.md absolute path>
+
+<summary-final.md full text>
+```
+
+### Step 4: Generate Mind Map (optional, best-effort)
 
 1. Read `*-summary-final.md`
 2. Extract structured outline as `<filename>-mindmap.md`
@@ -104,16 +114,7 @@ node skills/markmap-mindmap-export/scripts/export_png_headless.js \
   --marginX 0.1755 --marginY 0.0285 --pad 40
 ```
 
-> If mind map export fails, skip to Step 4. Do not report error or retry.
-
-### Step 4: Output Results
-
-```text
-Mind map: <mindmap.png absolute path>       (if generated)
-Full report: <summary-final.md absolute path>
-
-<summary-final.md full text>
-```
+> If mind map export fails, skip it silently. Do not retry or troubleshoot — the summary is already delivered.
 
 ---
 
