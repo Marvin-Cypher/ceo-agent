@@ -1,0 +1,5 @@
+# Disable gstack auto-upgrade — newer versions (0.12+) have nested sub-skills
+# that OpenClaw's skill loader rejects ("outside configured root").
+# Pin to 0.9.4.0 until OpenClaw supports nested skill structures.
+update_check: false
+auto_upgrade: false
