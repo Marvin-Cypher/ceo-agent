@@ -94,6 +94,22 @@ def _load_auth():
         except Exception:
             pass
 
+    # Priority 4: OpenClaw model proxy (openclaw.json has API key for a transcription-capable model)
+    config_path = os.path.join(OPENCLAW_HOME, "openclaw.json")
+    if os.path.isfile(config_path):
+        try:
+            with open(config_path) as f:
+                cfg = json.load(f)
+            providers = cfg.get("models", {}).get("providers", {})
+            # Find a provider with an "openai" key that has a transcription model
+            for pname, prov in providers.items():
+                api_key = prov.get("apiKey") or prov.get("headers", {}).get("x-api-key", "")
+                base_url = prov.get("baseUrl", "").rstrip("/")
+                if api_key and base_url:
+                    return api_key, base_url, "openclaw-proxy"
+        except Exception:
+            pass
+
     # Nothing found
     print("Error: No transcription API credentials found.", file=sys.stderr)
     print("", file=sys.stderr)

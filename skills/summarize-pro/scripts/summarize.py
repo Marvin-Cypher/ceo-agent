@@ -75,17 +75,53 @@ def install_hint(pkg):
 
 # --- Check transcription availability ---
 def check_transcription_available():
-    """Check OpenClaw user identity exists (required for platform API)."""
+    """Check if any transcription auth method is available."""
+    import json as _json
+
+    # Method 1: formData config
+    secrets_path = os.path.join(SCRIPT_DIR, "..", "..", "..", ".secrets", "transcribe-config.json")
+    if os.path.isfile(secrets_path):
+        try:
+            with open(secrets_path) as f:
+                cfg = _json.load(f)
+            if cfg.get("transcribe_api_key"):
+                print_info("Transcription: formData API key")
+                return True
+        except Exception:
+            pass
+
+    # Method 2: environment variable
+    if os.environ.get("TRANSCRIBE_API_KEY", "").strip():
+        print_info("Transcription: environment variable")
+        return True
+
+    # Method 3: OpenClaw user identity
     openclaw_home = os.path.join(os.path.expanduser("~"), ".openclaw")
     userinfo_path = os.path.join(openclaw_home, "identity", "openclaw-userinfo.json")
     if os.path.isfile(userinfo_path):
         print_info("Transcription: Platform transcription API")
         return True
 
-    print_error("OpenClaw user identity not found")
+    # Method 4: OpenClaw model proxy (openclaw.json has API key for transcription model)
+    config_path = os.path.join(openclaw_home, "openclaw.json")
+    if os.path.isfile(config_path):
+        try:
+            with open(config_path) as f:
+                cfg = _json.load(f)
+            providers = cfg.get("models", {}).get("providers", {})
+            for prov in providers.values():
+                if prov.get("apiKey") or prov.get("headers", {}).get("x-api-key"):
+                    print_info("Transcription: Platform model proxy")
+                    return True
+        except Exception:
+            pass
+
+    print_error("No transcription credentials found")
     print("")
-    print("Please ensure OpenClaw is properly installed and you are logged in.")
-    print(f"Expected: {userinfo_path}")
+    print("Configure one of the following:")
+    print("  Option 1: Set transcribe_api_key in agent formData")
+    print("  Option 2: Set TRANSCRIBE_API_KEY environment variable")
+    print("  Option 3: Use an OpenClaw-compatible platform")
     print("")
     sys.exit(1)
 
