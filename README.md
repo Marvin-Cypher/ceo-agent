@@ -1,61 +1,59 @@
 # CEO Agent
 
-Executive AI assistant combining content intelligence with business conversation tracking. Designed for founders, executives, and business leaders who need to stay on top of everything.
+An AI chief of staff that keeps you informed across every channel — conversations, meetings, content, and apps — so nothing falls through the cracks.
 
-## Capabilities
+## What It Does
 
-### Content Summarization
-Summarize any content type with structured reports and mind maps:
-- **Audio/Video**: mp3, wav, m4a, mp4, mov, mkv (transcription → summary)
-- **Online Video**: YouTube, TikTok, Instagram Reels, X/Twitter, and any yt-dlp URL
-- **Documents**: PDF, images (OCR/vision), web pages, text files
-- **Auto-detection**: Meeting, Interview, Lecture, Podcast, or General — tailored output
+### Stay on Top of Every Conversation
 
-### Business Conversation Tracking (fbtrack)
-- Sync Telegram and Slack conversations
-- Fetch Fireflies meeting transcripts
-- AI-powered insight extraction (deals, action items, Q&A)
-- Weekly merged reports across all channels
-- CRM sync (Attio) for interaction dates and meeting notes
-- Push reports to Notion
+The conversations that matter most happen in fragments — across Telegram threads, Slack channels, and back-to-back meetings. CEO Agent pulls them together.
 
-### Composio Integrations (20+ Tools)
+- **Telegram & Slack** — sync partner and team conversations, extract deals, action items, and key decisions
+- **Meeting Transcripts** — pull from Fireflies, Fathom, Zoom, Google Meet, or Teams
+- **Weekly Intelligence Reports** — auto-generated, merged across all channels with trends and follow-ups
+- **CRM Sync** — push interaction history and notes to Attio, HubSpot, Salesforce, Pipedrive, or Zoho
 
-| Category | Supported Tools |
-|----------|----------------|
-| **Meeting Transcripts** | Zoom, Google Meet, Microsoft Teams, Fathom, Fireflies |
-| **CRM** | HubSpot, Salesforce, Pipedrive, Attio, Zoho CRM |
-| **Project Management** | Linear, Jira, Asana, Monday.com, ClickUp, Trello |
-| **Productivity** | Gmail, Google Calendar, Google Drive, Notion, Slack |
+Set it on a schedule and get a structured briefing every Monday — or ask anytime.
 
-Users connect their preferred tools in the Clawdi dashboard — the agent auto-detects what's available.
+### Turn Meetings into Action
 
-### gstack Engineering Workflow
-Bundled [gstack](https://github.com/garrytan/gstack) skills for development workflows:
-- **Headless browser**: Browse, screenshot, interact with any website (~100ms/command)
-- **QA testing**: Automated bug finding and fixing with before/after evidence
-- **Code review**: Pre-landing diff analysis for SQL safety, trust boundaries, side effects
-- **Debugging**: Systematic root cause investigation (no fixes without cause)
-- **Planning**: CEO review, eng review, design review, office hours
-- **Shipping**: Test → review → push → PR → deploy → document
+Every meeting produces a structured report: decisions made, owners assigned, risks flagged, and next steps. The agent pushes action items to Linear, Jira, Asana, or whichever tool your team uses.
 
-## Quick Start
+### 20+ App Integrations
 
-1. Install via Clawdi's 1-click install
-2. Chat with the agent — it will introduce itself and learn about you
-3. Send content to summarize, or ask it to run a weekly business sync
+Connect your stack in the Clawdi dashboard — the agent discovers what's available automatically.
 
-## Requirements
+| | |
+|---|---|
+| **Meetings** | Zoom, Google Meet, Teams, Fathom, Fireflies |
+| **CRM** | HubSpot, Salesforce, Pipedrive, Attio, Zoho |
+| **Tasks** | Linear, Jira, Asana, Monday, ClickUp, Trello |
+| **Productivity** | Gmail, Calendar, Drive, Notion, Slack |
 
-- Python 3 (for summarization)
-- Node.js + npm (for fbtrack)
-- OpenClaw platform login
-- Optional: ffmpeg, yt-dlp, Fireflies API key, Telegram API credentials
+### Summarize Any Content
 
-## Output Examples
+When you need to quickly digest something — a podcast, a competitor's keynote, a long PDF, a team recording — just drop it in.
 
-| File | Description |
-|------|-------------|
-| `*-summary-final.md` | Structured summary report |
-| `*-mindmap.png` | Mind map visualization |
-| `weekly-report-*.md` | Merged weekly business report |
+- **Video & Audio** — YouTube, TikTok, Instagram Reels, X/Twitter, local files
+- **Documents** — PDF, images, web pages, markdown, plain text
+- **Smart Detection** — auto-classifies as Meeting, Interview, Lecture, Podcast, or General and tailors the output
+
+Every summary includes key takeaways, risks, action items, notable quotes, and follow-up prompts.
+
+### Engineering Toolkit
+
+Bundled [gstack](https://github.com/garrytan/gstack) for hands-on work — headless browser, QA testing, code review, debugging, and shipping workflows.
+
+## Get Started
+
+1. **Install** — one click from the Clawdi store
+2. **Chat** — the agent introduces itself and learns about you
+3. **Go** — connect your apps, set up a weekly sync, or drop in content
+
+No configuration required. Optional: add API keys for transcription, Fireflies, or Telegram in the setup form.
+
+## Personality
+
+This isn't a generic assistant. CEO Agent has opinions, remembers context across sessions, and gets straight to the point. It learns your priorities, your team, and your rhythm — then works around them.
+
+Built for founders and operators who need leverage, not another tool to manage.

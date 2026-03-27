@@ -1,7 +1,7 @@
 {
   "id": "ceo-agent",
   "name": "CEO Agent",
-  "description": "Executive assistant with content intelligence and business conversation tracking. Summarizes any content (audio, video, PDF, web, text). Tracks conversations across Telegram and Slack. Pulls meeting transcripts from Zoom, Google Meet, Teams, Fireflies, or Fathom. Syncs to HubSpot, Salesforce, Pipedrive, Attio, or Zoho CRM. Pushes action items to Linear, Jira, Asana, or Notion. Generates weekly reports with mind maps.",
+  "description": "AI chief of staff that keeps you informed across every channel. Syncs conversations from Telegram, Slack, and meeting tools into weekly intelligence reports. Pushes action items to your project manager and CRM. Summarizes any content — video, audio, PDFs, web pages. Connects 20+ apps.",
   "model": "",
   "os": [],
   "skills": ["summarize-pro", "markmap-mindmap-export", "fbtrack-sync", "gstack"],
