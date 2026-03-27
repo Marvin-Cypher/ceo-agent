@@ -40,13 +40,27 @@ Access Gmail, Calendar, Drive, Notion, Slack, and more via Composio tools. **Alw
 - **`summarize.py` may only be called once per task**
 - **ALWAYS use `python3` (NOT `python`)** — `python` is not available on this system
 
+### Step 0: Check Composio Connections (first time only)
+
+Before your first summarization task involving YouTube, check if YouTube is connected:
+
+```bash
+mcporter call clawdi-mcp.COMPOSIO_MANAGE_CONNECTIONS 'toolkits=["youtube"]'
+```
+
+- If `has_active_connection: true` → good, proceed
+- If `has_active_connection: false` → tell the user: "YouTube isn't connected yet. Please connect it in the Clawdi dashboard (Composio settings) so I can fetch transcripts. You can also connect Google Suite which covers YouTube access."
+- **Do NOT silently initiate a connection and continue** — ask the user to connect first, then retry
+
+> **Note:** If the user already connected Google Suite, YouTube should already be available. Check before asking them to connect again.
+
 ### Step 1: Determine Input Type and Prepare Content Source
 
 | Input Type | Processing Path |
 | ---------- | --------------- |
 | **Local audio** (mp3/wav/m4a etc.) | Call `python3 skills/summarize-pro/scripts/summarize.py --full --quiet` |
 | **Local video** (mp4/mov/mkv etc.) | Check for subtitles first; if found, extract; if not, call `python3 skills/summarize-pro/scripts/summarize.py --full --quiet` |
-| **YouTube video URL** | Use Composio YouTube (see below) to get transcript, then create timestamp dir and write to `<filename>-transcript.txt` |
+| **YouTube video URL** | Use Composio YouTube (see below) to get transcript |
 | **Other online video URL** (TikTok, Instagram, etc.) | Call `python3 skills/summarize-pro/scripts/summarize.py --full --quiet` (yt-dlp handles download) |
 | **PDF file** | Read PDF text → manually create timestamp dir, write to `<filename>-transcript.txt` |
 | **Image** (jpg/png/webp etc.) | Use vision → manually create timestamp dir, write to `<filename>-transcript.txt` |
@@ -55,32 +69,32 @@ Access Gmail, Calendar, Drive, Notion, Slack, and more via Composio tools. **Alw
 
 ### YouTube Transcript via Composio
 
-For YouTube videos, use Composio YouTube tools to get the transcript (avoids yt-dlp auth issues):
+**IMPORTANT:** For YouTube videos, always use Composio YouTube tools — NOT yt-dlp, NOT `summarize.py`, NOT browser, NOT pip packages, NOT web scraping. yt-dlp is blocked by YouTube on server IPs, and transcription API has a 25MB file size limit that long videos exceed.
+
+**Method 1: Composio captions (preferred)**
 
 ```bash
-# Step 1: Get video details
+# Get caption tracks
 mcporter call clawdi-mcp.COMPOSIO_MULTI_EXECUTE_TOOL \
-  'tools=[{"tool_slug":"YOUTUBE_VIDEO_DETAILS","arguments":{"video_id":"VIDEO_ID","part":"snippet,contentDetails,statistics"}}]'
+  'tools=[{"tool_slug":"YOUTUBE_LIST_CAPTION_TRACK","arguments":{"video_id":"VIDEO_ID","part":"id,snippet"}}]'
 
-# Step 2: List caption tracks
-mcporter call clawdi-mcp.COMPOSIO_MULTI_EXECUTE_TOOL \
-  'tools=[{"tool_slug":"YOUTUBE_LIST_CAPTION_TRACK","arguments":{"video_id":"VIDEO_ID"}}]'
-
-# Step 3: Download captions (if available and user owns the video)
+# Download captions (use the track ID from above, NOT the video ID)
 mcporter call clawdi-mcp.COMPOSIO_MULTI_EXECUTE_TOOL \
   'tools=[{"tool_slug":"YOUTUBE_LOAD_CAPTIONS","arguments":{"id":"CAPTION_TRACK_ID","tfmt":"srt"}}]'
 ```
 
-**If YOUTUBE_LOAD_CAPTIONS fails (403 — not owned by user)**, use `COMPOSIO_REMOTE_WORKBENCH` fallback:
+> `YOUTUBE_LOAD_CAPTIONS` only works for videos the user owns. If it returns 403, use Method 2.
+
+**Method 2: Remote workbench transcript fetch (fallback)**
 
 ```bash
 mcporter call clawdi-mcp.COMPOSIO_MULTI_EXECUTE_TOOL \
-  'tools=[{"tool_slug":"COMPOSIO_REMOTE_WORKBENCH","arguments":{"code":"from youtube_transcript_api import YouTubeTranscriptApi\napi=YouTubeTranscriptApi()\nsegs=api.fetch(\"VIDEO_ID\",languages=[\"en\",\"en-US\",\"en-GB\"])\nout=[]\nfor s in segs:\n st=getattr(s,\"start\",s.get(\"start\",0) if isinstance(s,dict) else 0)\n tx=getattr(s,\"text\",s.get(\"text\",\"\") if isinstance(s,dict) else \"\")\n m,sec=divmod(int(st or 0),60)\n if tx: out.append(f\"[{m:02d}:{sec:02d}] {tx}\")\nprint(chr(10).join(out))"}}]'
+  'tools=[{"tool_slug":"COMPOSIO_REMOTE_WORKBENCH","arguments":{"code":"from youtube_transcript_api import YouTubeTranscriptApi\napi=YouTubeTranscriptApi()\nsegs=api.fetch(\"VIDEO_ID\",languages=[\"en\",\"en-US\",\"en-GB\",\"zh-Hans\",\"zh-Hant\",\"zh\"])\nout=[]\nfor s in segs:\n st=getattr(s,\"start\",s.get(\"start\",0) if isinstance(s,dict) else 0)\n tx=getattr(s,\"text\",s.get(\"text\",\"\") if isinstance(s,dict) else \"\")\n m,sec=divmod(int(st or 0),60)\n if tx: out.append(f\"[{m:02d}:{sec:02d}] {tx}\")\nprint(chr(10).join(out))"}}]'
 ```
 
-Save the transcript to `summarizer-files/<timestamp>/<filename>-transcript.txt`, then proceed to Step 2.
+**If both methods fail**, tell the user the transcript is unavailable and explain why. Do NOT fall back to yt-dlp, browser, web scraping, pip install, or any other workaround — these will all fail and waste time.
 
-> **Do NOT** try to use the browser, install pip packages, or scrape YouTube directly. If all Composio methods fail, tell the user the transcript is unavailable.
+Save the transcript to `summarizer-files/<timestamp>/<filename>-transcript.txt`, then proceed to Step 2.
 
 ### Step 2: Generate Final Summary Report
 
