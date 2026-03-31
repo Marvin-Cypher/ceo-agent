@@ -3,7 +3,7 @@
 // into fbtrack's data pipeline. This is the single entry point for all
 // Composio-sourced data.
 //
-// Usage: node scripts/composio-unified-sync.js --days 10
+// Usage: node scripts/composio-unified-sync.cjs --days 10
 //
 // Auto-detects and syncs from:
 //   - Gmail → business emails (saves to data/gmail/)
@@ -44,11 +44,14 @@ function composioExec(toolSlug, args) {
   const escaped = payload.replace(/'/g, "'\\''");
   try {
     const raw = execSync(
-      `mcporter call clawdi-mcp COMPOSIO_MULTI_EXECUTE_TOOL --args '${escaped}' --output json`,
+      `mcporter call clawdi-mcp.COMPOSIO_MULTI_EXECUTE_TOOL '${escaped}'`,
       { encoding: 'utf8', timeout: 90000, stdio: ['pipe', 'pipe', 'pipe'] }
     );
     const parsed = JSON.parse(raw);
-    // Composio wraps results in various ways
+    // Composio wraps results: {data:{results:[{output:...}]}} or {successful:true,data:{results:[...]}}
+    const results = parsed?.data?.results || parsed?.results || [];
+    if (Array.isArray(results) && results[0]?.output) return results[0].output;
+    if (Array.isArray(results) && results[0]?.data) return results[0].data;
     if (parsed?.tools?.[0]?.output) return parsed.tools[0].output;
     if (parsed?.data) return parsed.data;
     return parsed;
@@ -61,7 +64,7 @@ function composioExec(toolSlug, args) {
 function composioSearch(query) {
   try {
     const raw = execSync(
-      `mcporter call clawdi-mcp COMPOSIO_SEARCH_TOOLS --args '{"query":"${query}"}' --output json`,
+      `mcporter call clawdi-mcp.COMPOSIO_SEARCH_TOOLS 'queries=["${query}"]'`,
       { encoding: 'utf8', timeout: 30000, stdio: ['pipe', 'pipe', 'pipe'] }
     );
     return JSON.parse(raw);
@@ -73,12 +76,14 @@ function composioSearch(query) {
 function isConnected(toolkit) {
   try {
     const raw = execSync(
-      `mcporter call clawdi-mcp COMPOSIO_MANAGE_CONNECTIONS --args '{"toolkits":["${toolkit}"]}' --output json`,
+      `mcporter call clawdi-mcp.COMPOSIO_MANAGE_CONNECTIONS 'toolkits=["${toolkit}"]'`,
       { encoding: 'utf8', timeout: 15000, stdio: ['pipe', 'pipe', 'pipe'] }
     );
     const parsed = JSON.parse(raw);
-    // Check if connection is active
-    return parsed?.connected === true || parsed?.status === 'active' || !!parsed?.entity_id;
+    // Check if connection is active — COMPOSIO_MANAGE_CONNECTIONS returns {data:{results:{toolkit:{has_active_connection:bool}}}}
+    const results = parsed?.data?.results || parsed?.results || {};
+    const info = results[toolkit] || Object.values(results)[0] || {};
+    return info?.has_active_connection === true || parsed?.connected === true || parsed?.status === 'active';
   } catch (e) {
     return false;
   }
@@ -525,12 +530,20 @@ async function main() {
 
   const syncResults = {};
   let totalItems = 0;
+  const disconnected = [];
 
   for (const [key, source] of Object.entries(sources)) {
     process.stdout.write(`  ${source.name}... `);
 
     if (DRY_RUN) {
       console.log('(dry run, skipped)');
+      continue;
+    }
+
+    // Check connection first
+    if (!isConnected(source.toolkit)) {
+      console.log('⚠ not connected');
+      disconnected.push(source.name);
       continue;
     }
 
@@ -572,6 +585,11 @@ async function main() {
 
   console.log(`\n📊 Total: ${totalItems} items from ${Object.keys(syncResults).length} sources`);
   console.log(`   Data saved to: ${DATA_DIR}/`);
+
+  if (disconnected.length > 0) {
+    console.log(`\n⚠ Not connected (${disconnected.length}): ${disconnected.join(', ')}`);
+    console.log(`  → Connect these apps in the Clawdi dashboard (Composio settings) to include them in reports.`);
+  }
 
   // Also write a combined file for merge_report.cjs
   const allItems = [];

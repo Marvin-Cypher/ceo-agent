@@ -96,7 +96,7 @@ set -a && . .env && set +a
 # Composio unified sync — auto-detects Gmail, Zoom, Meet, Teams,
 # Fathom, Fireflies, Slack, HubSpot, Salesforce, Pipedrive, Linear,
 # Jira, Asana, ClickUp — pulls everything into data/
-node scripts/composio-unified-sync.js --days 10
+node scripts/composio-unified-sync.cjs --days 10
 
 # Telegram direct sync (Composio doesn't support Telegram)
 npx fbtrack sync
@@ -124,7 +124,7 @@ node scripts/composio-action-items-sync.js --provider linear
 
 ### How the unified sync works
 
-`composio-unified-sync.js` auto-detects ALL connected Composio apps and pulls normalized data into `data/`:
+`composio-unified-sync.cjs` auto-detects ALL connected Composio apps and pulls normalized data into `data/`:
 
 | Connected App | Data Saved To | Type |
 |--------------|---------------|------|

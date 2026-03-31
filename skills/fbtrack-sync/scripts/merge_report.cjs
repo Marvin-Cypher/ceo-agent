@@ -54,7 +54,7 @@ function loadJsonDir(dirPath) {
   return items;
 }
 
-// Unified items (from composio-unified-sync.js)
+// Unified items (from composio-unified-sync.cjs)
 let allItems = [];
 try {
   const allPath = path.join(DATA_ROOT, 'all-sources.json');

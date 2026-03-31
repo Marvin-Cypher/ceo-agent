@@ -136,6 +136,30 @@ node skills/markmap-mindmap-export/scripts/export_png_headless.js \
 
 When asked to run a weekly sync, business report, or conversation tracking:
 
+### Step 0: Check Connected Data Sources (MUST do first)
+
+Before running any sync, check which apps are connected:
+
+```bash
+mcporter call clawdi-mcp.COMPOSIO_MANAGE_CONNECTIONS \
+  'toolkits=["gmail","slack","googlecalendar","zoom","hubspot","salesforce","linear","jira","asana"]'
+```
+
+If **no apps are connected**, tell the user:
+
+> "To generate a weekly report, I need access to your business tools. Please connect at least one of these in the Clawdi dashboard (Composio settings):
+> - **Email**: Gmail
+> - **Chat**: Slack, Telegram
+> - **Meetings**: Google Calendar, Zoom, Fireflies, Fathom
+> - **CRM**: HubSpot, Salesforce, Pipedrive, Attio
+> - **Tasks**: Linear, Jira, Asana, ClickUp
+>
+> Once connected, ask me again and I'll pull your data."
+
+If **some apps are connected**, proceed with those and note which are missing in the report.
+
+### Pipeline
+
 1. Read `skills/fbtrack-sync/SKILL.md` for full pipeline instructions
 2. Follow the Weekly Sync Pipeline steps in order
 3. Use Composio to push reports to Notion if configured
